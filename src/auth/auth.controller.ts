@@ -17,12 +17,23 @@ import {
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from '../users/dtos/create-users.dto';
 
 @ApiBearerAuth()
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
+
+  @Post('register')
+  @ApiOperation({ summary: 'Register' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'User registered',
+  })
+  signUp(@Body() user: CreateUserDto) {
+    return this.authService.signUp(user);
+  }
 
   @HttpCode(HttpStatus.OK)
   @Post('login')
