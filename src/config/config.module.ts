@@ -3,12 +3,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { configurations } from './configs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
+import { validateConfig } from './config-validation';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       load: [...configurations],
       isGlobal: true,
+      validate: validateConfig,
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
