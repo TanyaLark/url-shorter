@@ -17,11 +17,11 @@ import {
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
-import { CreateUserDto } from '../users/dtos/create-users.dto';
+import { CreateUserDto } from '../users/dtos/create-user.dto';
 
-@ApiBearerAuth()
-@ApiTags('auth')
 @Controller('auth')
+@ApiTags('auth')
+@ApiBearerAuth()
 export class AuthController {
   constructor(private authService: AuthService) {}
 

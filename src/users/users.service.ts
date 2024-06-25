@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { User } from './entities/user.entity';
-import { CreateUserDto } from './dtos/create-users.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -31,7 +31,7 @@ export class UsersService {
     }
   }
 
-  async findById(id: number): Promise<User> {
+  async findById(id: string): Promise<User> {
     try {
       const user = await this.usersRepository.findById(id);
       if (!user) {

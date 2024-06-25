@@ -1,7 +1,8 @@
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CreateUserDto } from './dtos/create-users.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
+import * as bcrypt from 'bcrypt';
 
 export class UsersRepository extends Repository<User> {
   constructor(
@@ -19,12 +20,16 @@ export class UsersRepository extends Repository<User> {
     return this.find();
   }
 
-  public async findById(id: number): Promise<User | null> {
+  public async findById(id: string): Promise<User | null> {
     return this.findOneBy({ id: id });
   }
 
   public async store(user: CreateUserDto): Promise<User> {
-    const newUser = this.create(user);
+    const salt = await bcrypt.genSalt();
+    const { firstName, lastName, email, password } = user;
+    const hash = await bcrypt.hash(password, salt);
+    const payload = { firstName, lastName, email, salt, passwordHash: hash };
+    const newUser = this.create(payload);
     return this.save(newUser);
   }
 

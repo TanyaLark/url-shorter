@@ -8,8 +8,8 @@ export class CreateUserDto {
   lastName: string;
 
   @ApiProperty()
-  password: string;
+  email: string;
 
   @ApiProperty()
-  isActive: boolean;
+  password: string;
 }
