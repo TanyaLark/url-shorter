@@ -7,6 +7,8 @@ import {
   Post,
   Req,
   UseGuards,
+  UseInterceptors,
+  ClassSerializerInterceptor,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -18,8 +20,10 @@ import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
+import { SerializedUser } from '../users/Interceptors/serialized-user';
 
 @Controller('auth')
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('auth')
 @ApiBearerAuth()
 export class AuthController {
@@ -31,7 +35,7 @@ export class AuthController {
     status: HttpStatus.CREATED,
     description: 'User registered',
   })
-  signUp(@Body() user: CreateUserDto) {
+  async signUp(@Body() user: CreateUserDto): Promise<SerializedUser> {
     return this.authService.signUp(user);
   }
 

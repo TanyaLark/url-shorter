@@ -1,5 +1,5 @@
 import { Repository } from 'typeorm';
-import { User } from './entities/user.entity';
+import { User } from './user.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dtos/create-user.dto';
 import * as bcrypt from 'bcrypt';
