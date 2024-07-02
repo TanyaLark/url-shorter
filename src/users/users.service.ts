@@ -1,4 +1,8 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  PreconditionFailedException,
+} from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { SerializedUser } from './Interceptors/serialized-user';
@@ -24,6 +28,16 @@ export class UsersService {
   // }
 
   async create(user: CreateUserDto): Promise<SerializedUser> {
+    const { email } = user;
+    const foundedUser = await this.usersRepository.findOne({
+      where: { email },
+    });
+    if (foundedUser) {
+      throw new PreconditionFailedException(
+        `User with email ${email} already exists`,
+      );
+    }
+
     try {
       const createdUser = await this.usersRepository.store(user);
       return new SerializedUser(createdUser);

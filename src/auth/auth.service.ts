@@ -12,8 +12,7 @@ export class AuthService {
   ) {}
 
   async signUp(user: CreateUserDto): Promise<SerializedUser> {
-    const createdUser = await this.usersService.create(user);
-    return createdUser;
+    return this.usersService.create(user);
   }
 
   async signIn(

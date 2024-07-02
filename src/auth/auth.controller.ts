@@ -20,7 +20,7 @@ import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { SerializedUser } from '../users/Interceptors/serialized-user';
+import { SignUpResDto } from './dto/sign-up-res.dto';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -35,8 +35,14 @@ export class AuthController {
     status: HttpStatus.CREATED,
     description: 'User registered',
   })
-  async signUp(@Body() user: CreateUserDto): Promise<SerializedUser> {
-    return this.authService.signUp(user);
+  async signUp(@Body() user: CreateUserDto): Promise<SignUpResDto> {
+    const createdUser = await this.authService.signUp(user);
+    if (createdUser) {
+      return {
+        status: HttpStatus.CREATED,
+        description: 'User registered',
+      };
+    }
   }
 
   @HttpCode(HttpStatus.OK)
