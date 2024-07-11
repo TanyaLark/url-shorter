@@ -1,27 +1,13 @@
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { User } from './user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { CreateUserDto } from './dtos/create-user.dto';
 import * as bcrypt from 'bcrypt';
+import { Injectable } from '@nestjs/common';
 
+@Injectable()
 export class UsersRepository extends Repository<User> {
-  constructor(
-    @InjectRepository(User)
-    private usersRepository: Repository<User>,
-  ) {
-    super(
-      usersRepository.target,
-      usersRepository.manager,
-      usersRepository.queryRunner,
-    );
-  }
-
-  public async findAll(): Promise<User[]> {
-    return this.find();
-  }
-
-  public async findById(id: string): Promise<User | null> {
-    return this.findOneBy({ id: id });
+  constructor(private dataSource: DataSource) {
+    super(User, dataSource.createEntityManager());
   }
 
   public async store(user: CreateUserDto): Promise<User> {
@@ -32,18 +18,4 @@ export class UsersRepository extends Repository<User> {
     const newUser = this.create(payload);
     return this.save(newUser);
   }
-
-  // public async updateOne(
-  //   id: number,
-  //   updateUserDto: UpdateUsersDto,
-  // ): Promise<User | undefined> {
-  //   const user = await this.findById(id);
-  //   if (!user) return undefined;
-  //   Object.assign(user, updateUserDto);
-  //   return this.save(user);
-  // }
-
-  // public async destroy(id: number): Promise<void> {
-  //   await this.delete(id);
-  // }
 }
