@@ -4,6 +4,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { jwtConstants } from './constants';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
+import { SignUpResDto } from './dto/sign-up-res.dto';
+import { HttpStatus } from '@nestjs/common';
+import { LoginDto } from './dto/login.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -23,7 +26,8 @@ describe('AuthController', () => {
         {
           provide: AuthService,
           useValue: {
-            signUp: jest.fn().mockResolvedValue('User registered'),
+            signUp: jest.fn(),
+            signIn: jest.fn(),
           },
         },
       ],
@@ -38,42 +42,53 @@ describe('AuthController', () => {
   });
 
   describe('signUp', () => {
-    it('should call authService.signUp with the correct parameters', async () => {
-      const userDto: CreateUserDto = {
-        firstName: 'test',
-        lastName: 'test',
-        email: 'test',
-        password: 'test',
+    it('should register a user successfully', async () => {
+      const createUserDto: CreateUserDto = {
+        firstName: 'Tania',
+        lastName: 'Benjamin',
+        email: 'taniaben@gmail.com',
+        password: 'taniaSuperPass@1',
       };
-      await controller.signUp(userDto);
-      expect(authService.signUp).toHaveBeenCalledWith(userDto);
+      const signUpResponse: SignUpResDto = {
+        status: HttpStatus.CREATED,
+        description: 'User registered',
+      };
+
+      (authService.signUp as jest.Mock).mockResolvedValue(signUpResponse);
+
+      const result = await controller.signUp(createUserDto);
+      expect(result).toEqual(signUpResponse);
+      expect(authService.signUp).toHaveBeenCalledWith(createUserDto);
     });
+  });
 
-    it('should return the result of authService.signUp', async () => {
-      const userDto: CreateUserDto = {
-        firstName: 'test',
-        lastName: 'test',
-        email: 'test',
-        password: 'test',
+  describe('signIn', () => {
+    it('should login a user successfully', async () => {
+      const loginDto: LoginDto = {
+        username: 'Tania Benjamin',
+        password: 'password',
       };
-      const result = await controller.signUp(userDto);
-      expect(result).toBe('User registered');
-    });
+      const tokenResponse = { access_token: 'testToken' };
 
-    it('should throw an error if authService.signUp fails', async () => {
-      const userDto: CreateUserDto = {
-        firstName: 'test',
-        lastName: 'test',
-        email: 'test',
-        password: 'test',
-      };
-      jest
-        .spyOn(authService, 'signUp')
-        .mockRejectedValueOnce(new Error('Error registering user'));
+      (authService.signIn as jest.Mock).mockResolvedValue(tokenResponse);
 
-      await expect(controller.signUp(userDto)).rejects.toThrow(
-        'Error registering user',
+      const result = await controller.signIn(loginDto);
+      expect(result).toEqual(tokenResponse);
+      expect(authService.signIn).toHaveBeenCalledWith(
+        loginDto.username,
+        loginDto.password,
       );
+    });
+  });
+
+  describe('getProfile', () => {
+    it('should return user profile', async () => {
+      const req = {
+        user: { id: 1, username: 'Tania Benjamin' },
+      };
+
+      const result = controller.getProfile(req);
+      expect(result).toEqual(req.user);
     });
   });
 });
