@@ -13,20 +13,6 @@ export class UsersService {
   private logger = new Logger(UsersService.name);
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  // public async findAll(): Promise<User[]> {
-  //   try {
-  //     const users = await this.usersRepository.findAll();
-  //     if (users?.length === 0) {
-  //       throw new Error('No record found.');
-  //     }
-  //     return users;
-  //   } catch (error) {
-  //     this.logger.log(
-  //       `UsersService:findAll : ${JSON.stringify(error.message)}`,
-  //     );
-  //   }
-  // }
-
   async create(user: CreateUserDto): Promise<SerializedUser> {
     const { email } = user;
     const foundedUser = await this.usersRepository.findOne({
@@ -47,6 +33,19 @@ export class UsersService {
     }
   }
 
+  async findOne(lastName: string): Promise<User> {
+    try {
+      const user = await this.usersRepository.findOne({ where: { lastName } });
+      if (!user) {
+        throw new Error('User not found.');
+      }
+      return user;
+    } catch (error) {
+      this.logger.log(`UsersService:findOne: ${JSON.stringify(error.message)}`);
+      throw new Error(error.message);
+    }
+  }
+
   // async findById(id: string): Promise<SerializedUser> {
   //   try {
   //     const user = await this.usersRepository.findById(id);
@@ -62,18 +61,19 @@ export class UsersService {
   //   }
   // }
 
-  async findOne(lastName: string): Promise<User> {
-    try {
-      const user = await this.usersRepository.findOne({ where: { lastName } });
-      if (!user) {
-        throw new Error('User not found.');
-      }
-      return user;
-    } catch (error) {
-      this.logger.log(`UsersService:findOne: ${JSON.stringify(error.message)}`);
-      throw new Error(error.message);
-    }
-  }
+  // public async findAll(): Promise<User[]> {
+  //   try {
+  //     const users = await this.usersRepository.findAll();
+  //     if (users?.length === 0) {
+  //       throw new Error('No record found.');
+  //     }
+  //     return users;
+  //   } catch (error) {
+  //     this.logger.log(
+  //       `UsersService:findAll : ${JSON.stringify(error.message)}`,
+  //     );
+  //   }
+  // }
 
   // async update(id: number, user: User): Promise<User> {
   //   try {
