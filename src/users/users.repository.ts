@@ -4,8 +4,15 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import * as bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
 
+export interface IUsersRepository {
+  store(user: CreateUserDto): Promise<User>;
+}
+
 @Injectable()
-export class UsersRepository extends Repository<User> {
+export class UsersRepository
+  extends Repository<User>
+  implements IUsersRepository
+{
   constructor(private dataSource: DataSource) {
     super(User, dataSource.createEntityManager());
   }
