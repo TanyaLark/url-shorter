@@ -1,14 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { User } from './user.entity';
 import { UsersRepository } from './users.repository';
-import {
-  hash,
-  mockRepository,
-  mockUsersRepositoryRes,
-  salt,
-} from './mocks/mock.users.repository';
-import { CreateUserDto } from './dtos/create-user.dto';
+import { mockRepository } from './mocks/mock.users.repository';
 import * as bcrypt from 'bcrypt';
+import { CreateUserDto } from './dtos/create-user.dto';
+import { User, UserRole } from './user.entity';
 
 describe('UsersRepository', () => {
   let usersRepository: UsersRepository;
@@ -33,28 +28,58 @@ describe('UsersRepository', () => {
         email: 'taniaben@gmail.com',
         password: 'taniaSuperPass@1',
       };
-
       const { firstName, lastName, email } = createUserDto;
-      const payload = { firstName, lastName, email, salt, passwordHash: hash };
-      const createdUser: User = mockUsersRepositoryRes.create;
-      const savedUser: User = mockUsersRepositoryRes.save;
+      const payload = {
+        firstName,
+        lastName,
+        email,
+        salt: 'someSalt',
+        passwordHash: 'someHash',
+      };
+      const createdUser = {
+        id: '931f3e88-513d-4d23-9d38-c7714b96f1bd',
+        firstName,
+        lastName,
+        email,
+        passwordHash: 'someHash',
+        salt: 'someSalt',
+      } as User;
 
-      jest.spyOn(bcrypt, 'genSalt').mockImplementation(async () => salt);
-      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => hash);
+      const savedUser = {
+        id: '931f3e88-513d-4d23-9d38-c7714b96f1bd',
+        firstName,
+        lastName,
+        email,
+        passwordHash: 'someHash',
+        salt: 'someSalt',
+        emailConfirmToken: null,
+        emailConfirmed: true,
+        role: UserRole.User,
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: null,
+      } as User;
+
+      jest
+        .spyOn(bcrypt, 'genSalt')
+        .mockImplementation(async () => payload.salt);
+      jest
+        .spyOn(bcrypt, 'hash')
+        .mockImplementation(async () => payload.passwordHash);
       jest.spyOn(usersRepository, 'create').mockReturnValue(createdUser);
       jest.spyOn(usersRepository, 'save').mockResolvedValue(savedUser);
 
       const result = await usersRepository.store(createUserDto);
 
       expect(bcrypt.genSalt).toHaveBeenCalledTimes(1);
-      expect(bcrypt.hash).toHaveBeenCalledWith(createUserDto.password, salt);
+      expect(bcrypt.hash).toHaveBeenCalledWith(
+        createUserDto.password,
+        payload.salt,
+      );
       expect(bcrypt.hash).toHaveBeenCalledTimes(1);
-
       expect(usersRepository.create).toHaveBeenCalledWith(payload);
       expect(usersRepository.create).toHaveBeenCalledTimes(1);
-
       expect(usersRepository.save).toHaveBeenCalledWith(createdUser);
-
       expect(result).toEqual(savedUser);
       expect(result).toHaveProperty('id');
       expect(result).toHaveProperty('firstName', firstName);

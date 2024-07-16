@@ -4,8 +4,8 @@ import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { SerializedUser } from './Interceptors/serialized-user';
 import { User, UserRole } from './user.entity';
-import { hash, salt } from './mocks/mock.users.repository';
 import { PreconditionFailedException } from '@nestjs/common';
+import { MockUsersRepository } from './mocks/mock.users.repository';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -17,10 +17,7 @@ describe('UsersService', () => {
         UsersService,
         {
           provide: UsersRepository,
-          useValue: {
-            findOne: jest.fn(),
-            store: jest.fn(),
-          },
+          useClass: MockUsersRepository,
         },
       ],
     }).compile();
@@ -41,25 +38,10 @@ describe('UsersService', () => {
         email: 'taniaben@gmail.com',
         password: 'taniaSuperPass@1',
       };
-      const createdUser: User = {
-        id: '931f3e88-513d-4d23-9d38-c7714b96f1bd',
-        firstName: 'Tania',
-        lastName: 'Benjamin',
-        email: 'taniaben@gmail.com',
-        passwordHash: hash,
-        salt: salt,
-        emailConfirmToken: null,
-        emailConfirmed: true,
-        role: UserRole.User,
-        isActive: true,
-        createdAt: new Date(),
-        updatedAt: null,
-      } as User;
 
+      const createdUser = await repository.store(userDto);
       const serializedUser = new SerializedUser(createdUser);
-
-      (repository.findOne as jest.Mock).mockResolvedValue(null);
-      (repository.store as jest.Mock).mockResolvedValue(createdUser);
+      jest.spyOn(repository, 'store');
 
       const result = await service.create(userDto);
       expect(result).toEqual(serializedUser);
@@ -81,8 +63,8 @@ describe('UsersService', () => {
         firstName: 'Tania',
         lastName: 'Benjamin',
         email: 'taniaben@gmail.com',
-        passwordHash: hash,
-        salt: salt,
+        passwordHash: 'someHash',
+        salt: 'someSalt',
         emailConfirmToken: null,
         emailConfirmed: true,
         role: UserRole.User,
@@ -131,8 +113,8 @@ describe('UsersService', () => {
         firstName: 'Tania',
         lastName: 'Benjamin',
         email: 'taniaben@gmail.com',
-        passwordHash: hash,
-        salt: salt,
+        passwordHash: 'someHash',
+        salt: 'someSalt',
         emailConfirmToken: null,
         emailConfirmed: true,
         role: UserRole.User,
