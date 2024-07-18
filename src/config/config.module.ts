@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { configurations } from './configs';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { validateConfig } from './config-validation';
+import { join } from 'node:path';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { validateConfig } from './config-validation';
         username: configService.get('DB.username'),
         password: configService.get('DB.password'),
         database: configService.get('DB.database'),
-        entities: ['dist/**/*.entity{.ts,.js}'],
+        entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
         synchronize: true,
       }),
     }),

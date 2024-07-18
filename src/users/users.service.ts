@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  PreconditionFailedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { SerializedUser } from './Interceptors/serialized-user';
@@ -19,9 +15,7 @@ export class UsersService {
       where: { email },
     });
     if (foundedUser) {
-      throw new PreconditionFailedException(
-        `User with email ${email} already exists`,
-      );
+      throw new BadRequestException(`User with email ${email} already exists`);
     }
 
     try {
