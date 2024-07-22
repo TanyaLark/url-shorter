@@ -21,6 +21,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { SignUpResDto } from './dto/sign-up-res.dto';
+import { LoginResDto } from './dto/login-res.dto';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -52,8 +53,9 @@ export class AuthController {
     status: HttpStatus.OK,
     description: 'Login successful',
   })
-  signIn(@Body() signInDto: LoginDto) {
-    return this.authService.signIn(signInDto.username, signInDto.password);
+  async signIn(@Body() signInDto: LoginDto): Promise<LoginResDto> {
+    const { email, password } = signInDto;
+    return this.authService.signIn(email, password);
   }
 
   @UseGuards(AuthGuard)
