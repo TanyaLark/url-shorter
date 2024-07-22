@@ -13,6 +13,7 @@ describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
   const emailStorage = [];
+  const passwordMock = 'Password@123!';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -44,7 +45,7 @@ describe('AuthController (e2e)', () => {
         firstName: faker.person.firstName(),
         lastName: faker.person.lastName(),
         email: faker.internet.email(),
-        password: 'Password@123!',
+        password: passwordMock,
       };
 
       emailStorage.push(userDto.email);
@@ -65,7 +66,7 @@ describe('AuthController (e2e)', () => {
         firstName: faker.person.firstName(),
         lastName: faker.person.lastName(),
         email: emailStorage[0],
-        password: 'Password@123!',
+        password: passwordMock,
       };
 
       const response = await request(app.getHttpServer())
@@ -101,6 +102,58 @@ describe('AuthController (e2e)', () => {
         'password should not be empty',
       ];
       expect(res.message).toEqual(expected);
+    });
+  });
+
+  describe('/auth/login (POST)', () => {
+    it('should return 200 OK and access_token', async () => {
+      const userDto = {
+        email: emailStorage[0],
+        password: passwordMock,
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(userDto)
+        .expect(200);
+
+      expect(response.body.access_token).toBeDefined();
+    });
+
+    it('should return 400 Bad Request', async () => {
+      const userDto = {
+        email: '',
+        password: '',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(userDto)
+        .expect(400);
+      const res = JSON.parse(response.text);
+      const expected = [
+        'email must be an email',
+        'email should not be empty',
+        'password is not strong enough',
+        'password should not be empty',
+      ];
+
+      expect(res.message).toEqual(expected);
+    });
+
+    it('should return 401 Unauthorized', async () => {
+      const userDto = {
+        email: emailStorage[0],
+        password: 'wrong_Password@123',
+      };
+
+      const response = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send(userDto)
+        .expect(401);
+      const res = JSON.parse(response.text);
+
+      expect(res.message).toEqual('Unauthorized');
     });
   });
 });

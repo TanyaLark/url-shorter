@@ -22,7 +22,7 @@ export class AuthService {
 
   async signIn(email: string, pass: string): Promise<{ access_token: string }> {
     if (!email || !pass) {
-      throw new BadRequestException('Email and password are required');
+      throw new BadRequestException();
     }
     const user = await this.usersService.findUserByEmail(email);
     const hash = await bcrypt.hash(pass, user.salt);
