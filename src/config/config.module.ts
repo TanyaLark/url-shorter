@@ -22,7 +22,7 @@ import { join } from 'node:path';
         password: configService.get('DB.password'),
         database: configService.get('DB.database'),
         entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
-        synchronize: true,
+        migrations: [join(__dirname, '..', 'migrations', '*.{ts,js}')],
       }),
     }),
   ],

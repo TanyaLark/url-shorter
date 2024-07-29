@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+import { join } from 'node:path';
 
 export enum ConfigKey {
   App = 'APP',
@@ -28,6 +29,8 @@ const DBConfig = registerAs(ConfigKey.Db, () => ({
   username: process.env.DATABASE_USERNAME,
   password: process.env.DATABASE_PASSWORD,
   database: process.env.DATABASE,
+  entities: [join(__dirname, '..', '**', '*.entity.{ts,js}')],
+  migrations: [join(__dirname, '..', 'migrations', '*.{ts,js}')],
 }));
 
 export const configurations = [APPConfig, DBConfig];

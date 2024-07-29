@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, BeforeUpdate } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  BeforeUpdate,
+  OneToMany,
+} from 'typeorm';
+import { Url } from '../url/url.entity';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -43,6 +50,9 @@ export class User {
 
   @Column({ default: null, nullable: true })
   updatedAt: Date;
+
+  @OneToMany(() => Url, (url) => url.user)
+  urls: Url[];
 
   @BeforeUpdate()
   updateTimestamp() {
