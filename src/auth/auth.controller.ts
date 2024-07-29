@@ -10,12 +10,7 @@ import {
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -26,7 +21,6 @@ import { LoginResDto } from './dto/login-res.dto';
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('auth')
-@ApiBearerAuth()
 export class AuthController {
   constructor(private authService: AuthService) {}
 
