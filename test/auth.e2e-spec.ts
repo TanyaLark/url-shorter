@@ -50,15 +50,21 @@ describe('AuthController (e2e)', () => {
 
       emailStorage.push(userDto.email);
 
+      const fullNameMock = `${userDto.firstName} ${userDto.lastName}`;
+
       const response = await request(app.getHttpServer())
         .post('/auth/register')
         .send(userDto)
         .expect(201);
 
-      expect(response.body).toEqual({
-        status: 201,
-        description: 'User registered',
-      });
+      const responseBody = JSON.parse(response.text);
+      expect(response.body.description).toEqual('User registered');
+      expect(responseBody.user.id).toBeDefined();
+      expect(responseBody.user.fullName).toEqual(fullNameMock);
+      expect(responseBody.user.email).toEqual(userDto.email);
+      expect(responseBody.user.role).toEqual('User');
+      expect(responseBody.user.password).toBeUndefined();
+      expect(responseBody.user.createdAt).toBeDefined();
     });
 
     it('should return 400 Bad Request, User with email already exists', async () => {
