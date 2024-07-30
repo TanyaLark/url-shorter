@@ -1,22 +1,19 @@
 import {
   Body,
   Controller,
-  Get,
   HttpCode,
   HttpStatus,
   Post,
-  Req,
-  UseGuards,
   UseInterceptors,
   ClassSerializerInterceptor,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { SignUpResDto } from './dto/sign-up-res.dto';
-import { LoginResDto } from './dto/login-res.dto';
+import { RegisterResponseDto } from './dto/sign-up-res.dto';
+import { LoginResponseDto } from './dto/login-res.dto';
+import { SerializedUser } from './interceptors/serialized-registered-user';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -25,17 +22,19 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
-  @ApiOperation({ summary: 'Register' })
+  @ApiOperation({ summary: 'New user registration' })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'User registered',
+    type: RegisterResponseDto,
   })
-  async signUp(@Body() user: CreateUserDto): Promise<SignUpResDto> {
+  async signUp(@Body() user: CreateUserDto): Promise<RegisterResponseDto> {
     const createdUser = await this.authService.signUp(user);
     if (createdUser) {
       return {
         status: HttpStatus.CREATED,
         description: 'User registered',
+        user: new SerializedUser(createdUser),
       };
     }
   }
@@ -46,20 +45,10 @@ export class AuthController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Login successful',
+    type: LoginResponseDto,
   })
-  async signIn(@Body() signInDto: LoginDto): Promise<LoginResDto> {
+  async signIn(@Body() signInDto: LoginDto): Promise<LoginResponseDto> {
     const { email, password } = signInDto;
     return this.authService.signIn(email, password);
-  }
-
-  @UseGuards(AuthGuard)
-  @Get('profile')
-  @ApiOperation({ summary: 'Profile' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Profile retrieved',
-  })
-  getProfile(@Req() req) {
-    return req.user;
   }
 }

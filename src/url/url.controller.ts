@@ -1,4 +1,11 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  ClassSerializerInterceptor,
+  Controller,
+  Post,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -7,11 +14,12 @@ import {
 } from '@nestjs/swagger';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { UrlService } from './url.service';
-import { SerializedUrl } from './Interceptors/serialized-url';
+import { SerializedUrl } from './interceptors/serialized-url';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserId } from '../decorators/user-id.decorator';
 
 @Controller('url')
+@UseInterceptors(ClassSerializerInterceptor)
 @ApiTags('url')
 @ApiBearerAuth()
 export class UrlController {
@@ -23,11 +31,13 @@ export class UrlController {
   @ApiResponse({
     status: 201,
     description: 'The short URL has been successfully created.',
+    type: SerializedUrl,
   })
   async createUrl(
     @UserId() userId: string,
     @Body() createUrlDto: CreateUrlDto,
   ): Promise<SerializedUrl> {
-    return this.urlService.createUrl(createUrlDto, userId);
+    const url = await this.urlService.createUrl(createUrlDto, userId);
+    return new SerializedUrl(url);
   }
 }

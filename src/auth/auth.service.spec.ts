@@ -3,7 +3,7 @@ import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { SerializedUser } from '../users/Interceptors/serialized-user';
+import { SerializedUser } from './interceptors/serialized-registered-user';
 import { User, UserRole } from '../users/user.entity';
 import { UnauthorizedException } from '@nestjs/common';
 

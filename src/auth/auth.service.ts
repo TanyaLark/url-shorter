@@ -6,8 +6,8 @@ import {
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
-import { SerializedUser } from '../users/Interceptors/serialized-user';
 import * as bcrypt from 'bcrypt';
+import { User } from '../users/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -16,7 +16,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signUp(user: CreateUserDto): Promise<SerializedUser> {
+  async signUp(user: CreateUserDto): Promise<User> {
     return this.usersService.create(user);
   }
 

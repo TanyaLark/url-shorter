@@ -1,15 +1,13 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { SerializedUser } from './Interceptors/serialized-user';
 import { User } from './user.entity';
-
 @Injectable()
 export class UsersService {
   private logger = new Logger(UsersService.name);
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  async create(user: CreateUserDto): Promise<SerializedUser> {
+  async create(user: CreateUserDto): Promise<User> {
     const { email } = user;
     const foundedUser = await this.usersRepository.findOne({
       where: { email },
@@ -19,8 +17,7 @@ export class UsersService {
     }
 
     try {
-      const createdUser = await this.usersRepository.store(user);
-      return new SerializedUser(createdUser);
+      return this.usersRepository.store(user);
     } catch (error) {
       this.logger.log(`UsersService:create: ${JSON.stringify(error.message)}`);
       throw new Error(error.message);

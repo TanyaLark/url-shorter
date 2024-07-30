@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
-import { SerializedUser } from './Interceptors/serialized-user';
+import { SerializedUser } from '../auth/interceptors/serialized-registered-user';
 import { User, UserRole } from './user.entity';
 import { PreconditionFailedException } from '@nestjs/common';
 import { MockUsersRepository } from './mocks/mock.users.repository';

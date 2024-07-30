@@ -14,17 +14,20 @@ export class CreateUrlDto {
   @IsString()
   originalUrl: string;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
   alias: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    required: false,
+    enum: UrlType,
+    examples: [UrlType.Permanent, UrlType.Temporary, UrlType.OneTime],
+  })
   @IsEnum(UrlType)
-  @IsOptional()
   type: UrlType;
 
-  @ApiProperty()
+  @ApiProperty({ required: false })
   @IsDate()
   @IsOptional()
   expiresAt: Date;
