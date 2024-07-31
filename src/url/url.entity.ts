@@ -3,6 +3,7 @@ import {
   BeforeUpdate,
   Column,
   Entity,
+  JoinTable,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -47,7 +48,8 @@ export class Url {
   @Column({ default: null, nullable: true })
   expiresAt: Date;
 
-  @ManyToOne(() => User, (user) => user.urls)
+  @ManyToOne(() => User, (user) => user.urls, { onDelete: 'CASCADE' })
+  @JoinTable()
   user: User;
 
   @BeforeInsert()

@@ -24,6 +24,7 @@ export class CreateUrlDto {
     enum: UrlType,
     examples: [UrlType.Permanent, UrlType.Temporary, UrlType.OneTime],
   })
+  @IsOptional()
   @IsEnum(UrlType)
   type: UrlType;
 
