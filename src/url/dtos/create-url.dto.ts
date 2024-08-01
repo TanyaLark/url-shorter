@@ -5,19 +5,20 @@ import {
   IsEnum,
   IsDate,
   IsOptional,
+  IsUrl,
 } from 'class-validator';
 import { UrlType } from '../url.entity';
 
 export class CreateUrlDto {
   @ApiProperty()
+  @IsUrl()
   @IsNotEmpty()
-  @IsString()
   originalUrl: string;
 
   @ApiProperty({ required: false })
   @IsString()
   @IsOptional()
-  alias: string;
+  alias?: string;
 
   @ApiProperty({
     required: false,
@@ -26,10 +27,10 @@ export class CreateUrlDto {
   })
   @IsOptional()
   @IsEnum(UrlType)
-  type: UrlType;
+  type?: UrlType;
 
   @ApiProperty({ required: false })
   @IsDate()
   @IsOptional()
-  expiresAt: Date;
+  expiresAt?: Date;
 }
