@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UrlRepository } from './url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { UsersRepository } from '../users/users.repository';
@@ -22,6 +22,14 @@ export class UrlService {
         user: true,
       },
     });
+    return url;
+  }
+
+  async findByCode(code: string): Promise<Url> {
+    const url = await this.urlRepository.findOneBy({ code });
+    if (!url) {
+      throw new BadRequestException('URL not found.');
+    }
     return url;
   }
 }

@@ -6,15 +6,17 @@ import { ApiProperty } from '@nestjs/swagger';
 export class SerializedUrl extends Url {
   @ApiProperty()
   @Expose()
-  id: string;
-
-  @ApiProperty()
-  @Expose()
   code: string;
 
   @ApiProperty()
   @Expose()
   originalUrl: string;
+
+  @ApiProperty()
+  @Expose()
+  get shortUrl(): string {
+    return `${process.env.APP_ADDRESS}/url/${this.code}`;
+  }
 
   @ApiProperty({
     enum: UrlType,
