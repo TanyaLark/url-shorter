@@ -9,6 +9,7 @@ import { HttpExceptionFilter } from '../src/common/http-exception.filter';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateUserDto } from '../src/users/dtos/create-user.dto';
 import { CreateUrlDto } from '../src/url/dtos/create-url.dto';
+import { SerializedUrl } from '../src/url/interceptors/serialized-url';
 
 describe('UrlController (e2e)', () => {
   let app: INestApplication;
@@ -74,58 +75,89 @@ describe('UrlController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}`)
         .send(urlDto);
 
-      const responseBody = JSON.parse(responseUrl.text);
+      const responseBody: SerializedUrl = JSON.parse(responseUrl.text);
       expect(responseUrl.status).toEqual(201);
-      expect(responseBody).toHaveProperty('id');
       expect(responseBody).toHaveProperty('code');
       expect(responseBody.originalUrl).toEqual(urlDto.originalUrl);
+      expect(responseBody).toHaveProperty('shortUrl');
       expect(responseBody).toHaveProperty('type');
       expect(responseBody.isActive).toBeTruthy();
       expect(responseBody.createdAt).toBeDefined();
     });
+
+    it('should return status: 401 - Unauthorized if token is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/url/create')
+        .send(urlDto);
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 401 - Unauthorized if token is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/url/create')
+        .set('Authorization', 'Bearer invalidToken')
+        .send(urlDto);
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 400 if originalUrl is invalid ', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/url/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({ originalUrl: 'invalidUrl' });
+
+      expect(response.status).toEqual(400);
+      expect(response.body.message).toEqual([
+        'originalUrl must be a URL address',
+      ]);
+    });
+
+    it('should return status: 400 if longUrl is missing', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/url/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({});
+
+      expect(response.status).toEqual(400);
+      expect(response.body.message).toEqual([
+        'originalUrl should not be empty',
+        'originalUrl must be a URL address',
+      ]);
+    });
   });
 
-  it('/url/create (POST) - missing token', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/url/create')
-      .send(urlDto);
+  describe('/url/list (GET)', () => {
+    it('should return status: 200 - success', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/url/list')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
 
-    expect(response.status).toEqual(401);
-    expect(response.body.message).toEqual('Unauthorized');
-  });
+      expect(response.body).toHaveProperty('urls');
+      expect(response.body).toHaveProperty('totalURLs');
+      expect(response.body).toHaveProperty('page');
+      expect(response.body).toHaveProperty('limit');
+      expect(response.body).toHaveProperty('totalPages');
+    });
 
-  it('/url/create (POST) - invalid token', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/url/create')
-      .set('Authorization', 'Bearer invalidToken')
-      .send(urlDto);
+    it('should return status: 401 - Unauthorized if token is missing', async () => {
+      const response = await request(app.getHttpServer()).get('/url/list');
 
-    expect(response.status).toEqual(401);
-    expect(response.body.message).toEqual('Unauthorized');
-  });
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
 
-  it('/url/create (POST) - invalid originalUrl', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/url/create')
-      .set('Authorization', `Bearer ${jwtToken}`)
-      .send({ originalUrl: 'invalidUrl' });
+    it('should return status: 401 - Unauthorized if token is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/url/list')
+        .set('Authorization', 'Bearer invalidToken');
 
-    expect(response.status).toEqual(400);
-    expect(response.body.message).toEqual([
-      'originalUrl must be a URL address',
-    ]);
-  });
-
-  it('/url/create (POST) - missing longUrl', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/url/create')
-      .set('Authorization', `Bearer ${jwtToken}`)
-      .send({});
-
-    expect(response.status).toEqual(400);
-    expect(response.body.message).toEqual([
-      'originalUrl should not be empty',
-      'originalUrl must be a URL address',
-    ]);
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
   });
 });

@@ -26,9 +26,6 @@ export class UrlService {
       take: limit,
       skip: (page - 1) * limit,
     });
-    if (!urls) {
-      throw new BadRequestException('URLs not found.');
-    }
     return [urls, total];
   }
 
