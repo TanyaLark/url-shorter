@@ -16,13 +16,20 @@ export class UrlService {
     return this.urlRepository.store(payload, user);
   }
 
-  async findUrlByUserId() {
-    const url = await this.urlRepository.find({
-      relations: {
-        user: true,
-      },
+  async findUrlsByUserId(
+    userId: string,
+    page: number,
+    limit: number,
+  ): Promise<[Url[], number]> {
+    const [urls, total] = await this.urlRepository.findAndCount({
+      where: { user: { id: userId } },
+      take: limit,
+      skip: (page - 1) * limit,
     });
-    return url;
+    if (!urls) {
+      throw new BadRequestException('URLs not found.');
+    }
+    return [urls, total];
   }
 
   async findByCode(code: string): Promise<Url> {

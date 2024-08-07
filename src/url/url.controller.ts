@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
   UseInterceptors,
@@ -21,6 +22,7 @@ import { SerializedUrl } from './interceptors/serialized-url';
 import { AuthGuard } from '../auth/auth.guard';
 import { UserId } from '../decorators/user-id.decorator';
 import { Response } from 'express';
+import { PaginatedUrls } from './interceptors/paginated-urls';
 
 @Controller('url')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -43,6 +45,33 @@ export class UrlController {
   ): Promise<SerializedUrl> {
     const url = await this.urlService.createUrl(createUrlDto, userId);
     return new SerializedUrl(url);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/list')
+  @ApiOperation({ summary: 'Get list of user URLs' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return list of user URLs',
+    type: PaginatedUrls,
+  })
+  async listUrls(
+    @UserId() userId: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 10,
+  ): Promise<PaginatedUrls> {
+    const [urls, total] = await this.urlService.findUrlsByUserId(
+      userId,
+      page,
+      limit,
+    );
+    const data = {
+      urls: urls.map((url) => new SerializedUrl(url)),
+      totalURLs: total,
+      page,
+      limit,
+    };
+    return new PaginatedUrls(data);
   }
 
   // By default, Postman follows redirects, which means you might see the response from the final URL with a 200 status code
