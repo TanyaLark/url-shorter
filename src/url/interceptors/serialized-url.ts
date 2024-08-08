@@ -1,9 +1,14 @@
 import { Exclude, Expose } from 'class-transformer';
 import { Url, UrlType } from '../url.entity';
 import { ApiProperty } from '@nestjs/swagger';
+import { UUID } from '../../common/types';
 
 @Exclude()
 export class SerializedUrl extends Url {
+  @ApiProperty()
+  @Expose()
+  id: UUID;
+
   @ApiProperty()
   @Expose()
   code: string;

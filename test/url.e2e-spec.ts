@@ -160,4 +160,63 @@ describe('UrlController (e2e)', () => {
       expect(response.body.message).toEqual('Unauthorized');
     });
   });
+
+  describe('/url/id/:urlId (GET)', () => {
+    it('should return status: 200 - success', async () => {
+      const responseUrl = await request(app.getHttpServer())
+        .post('/url/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(urlDto);
+
+      const responseBody: SerializedUrl = JSON.parse(responseUrl.text);
+
+      const response = await request(app.getHttpServer())
+        .get(`/url/id/${responseBody.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
+      expect(response.body).toHaveProperty('code');
+      expect(response.body.originalUrl).toEqual(urlDto.originalUrl);
+      expect(response.body).toHaveProperty('shortUrl');
+      expect(response.body).toHaveProperty('type');
+      expect(response.body.isActive).toBeTruthy();
+      expect(response.body.createdAt).toBeDefined();
+    });
+
+    it('should return status: 401 - Unauthorized if token is missing', async () => {
+      const response = await request(app.getHttpServer()).get('/url/id/1');
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 401 - Unauthorized if token is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/url/id/1')
+        .set('Authorization', 'Bearer invalidToken');
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 400 if urlId is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/url/id/invalidUrlId')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(response.status).toEqual(400);
+      expect(response.body.message).toEqual(
+        'Validation failed (uuid is expected)',
+      );
+    });
+
+    it('should return status: 404 if urlId is not found', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/url/id/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(response.status).toEqual(404);
+      expect(response.body.message).toEqual('URL not found.');
+    });
+  });
 });

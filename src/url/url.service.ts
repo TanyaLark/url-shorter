@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { UrlRepository } from './url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { UsersRepository } from '../users/users.repository';
@@ -27,6 +31,14 @@ export class UrlService {
       skip: (page - 1) * limit,
     });
     return [urls, total];
+  }
+
+  async findByUrlId(urlId: string): Promise<Url> {
+    const url = await this.urlRepository.findOneBy({ id: urlId });
+    if (!url) {
+      throw new NotFoundException('URL not found.');
+    }
+    return url;
   }
 
   async findByCode(code: string): Promise<Url> {

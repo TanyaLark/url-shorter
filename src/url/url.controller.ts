@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   Res,
@@ -23,6 +24,7 @@ import { AuthGuard } from '../auth/auth.guard';
 import { UserId } from '../decorators/user-id.decorator';
 import { Response } from 'express';
 import { PaginatedUrls } from './interceptors/paginated-urls';
+import { UUID } from '../common/types';
 
 @Controller('url')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -44,6 +46,21 @@ export class UrlController {
     @Body() createUrlDto: CreateUrlDto,
   ): Promise<SerializedUrl> {
     const url = await this.urlService.createUrl(createUrlDto, userId);
+    return new SerializedUrl(url);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('id/:urlId')
+  @ApiOperation({ summary: 'Get a single URL by urlId' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the URL',
+    type: SerializedUrl,
+  })
+  async getUrlById(
+    @Param('urlId', new ParseUUIDPipe()) urlId: UUID,
+  ): Promise<SerializedUrl> {
+    const url = await this.urlService.findByUrlId(urlId);
     return new SerializedUrl(url);
   }
 
