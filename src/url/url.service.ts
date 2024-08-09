@@ -7,6 +7,8 @@ import { UrlRepository } from './url.repository';
 import { CreateUrlDto } from './dtos/create-url.dto';
 import { UsersRepository } from '../users/users.repository';
 import { Url } from './url.entity';
+import { UpdateUrlDto } from './dtos/update-url.dto';
+import { UUID } from '../common/types';
 
 @Injectable()
 export class UrlService {
@@ -15,7 +17,7 @@ export class UrlService {
     private readonly usersRepository: UsersRepository,
   ) {}
 
-  async createUrl(payload: CreateUrlDto, userId: string): Promise<Url> {
+  async createUrl(payload: CreateUrlDto, userId: UUID): Promise<Url> {
     const user = await this.usersRepository.findOneBy({ id: userId });
     return this.urlRepository.store(payload, user);
   }
@@ -33,7 +35,7 @@ export class UrlService {
     return [urls, total];
   }
 
-  async findByUrlId(urlId: string): Promise<Url> {
+  async findByUrlId(urlId: UUID): Promise<Url> {
     const url = await this.urlRepository.findOneBy({ id: urlId });
     if (!url) {
       throw new NotFoundException('URL not found.');
@@ -47,5 +49,23 @@ export class UrlService {
       throw new BadRequestException('URL not found.');
     }
     return url;
+  }
+
+  async updateUrl(urlId: UUID, payload: UpdateUrlDto): Promise<Url> {
+    const url = await this.findByUrlId(urlId);
+    const { originalUrl, alias, type, expiresAt } = payload;
+    if (originalUrl) {
+      url.originalUrl = originalUrl;
+    }
+    if (alias) {
+      url.alias = alias;
+    }
+    if (type) {
+      url.type = type;
+    }
+    if (expiresAt) {
+      url.expiresAt = expiresAt;
+    }
+    return this.urlRepository.save(url);
   }
 }

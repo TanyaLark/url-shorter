@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Res,
@@ -25,6 +26,8 @@ import { UserId } from '../decorators/user-id.decorator';
 import { Response } from 'express';
 import { PaginatedUrls } from './interceptors/paginated-urls';
 import { UUID } from '../common/types';
+import { UpdateUrlDto } from './dtos/update-url.dto';
+import { UpdatedUrl } from './interceptors/updated-url';
 
 @Controller('url')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -51,7 +54,7 @@ export class UrlController {
 
   @UseGuards(AuthGuard)
   @Get('id/:urlId')
-  @ApiOperation({ summary: 'Get a single URL by urlId' })
+  @ApiOperation({ summary: 'Get a single URL' })
   @ApiResponse({
     status: 200,
     description: 'Return the URL',
@@ -73,7 +76,7 @@ export class UrlController {
     type: PaginatedUrls,
   })
   async listUrls(
-    @UserId() userId: string,
+    @UserId() userId: UUID,
     @Query('page') page = 1,
     @Query('limit') limit = 10,
   ): Promise<PaginatedUrls> {
@@ -108,5 +111,21 @@ export class UrlController {
   ): Promise<void> {
     const url = await this.urlService.findByCode(shortUrl);
     response.redirect(302, url.originalUrl);
+  }
+
+  @UseGuards(AuthGuard)
+  @Patch('id/:urlId')
+  @ApiOperation({ summary: 'Update a single URL' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the updated URL',
+    type: UpdatedUrl,
+  })
+  async updateUrl(
+    @Param('urlId', new ParseUUIDPipe()) urlId: UUID,
+    @Body() updateUrlDto: UpdateUrlDto,
+  ): Promise<UpdatedUrl> {
+    const url = await this.urlService.updateUrl(urlId, updateUrlDto);
+    return new UpdatedUrl(url);
   }
 }
