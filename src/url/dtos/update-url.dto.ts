@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsDateString, IsEnum, IsOptional, IsString } from 'class-validator';
 import { UrlType } from '../url.entity';
 
 export class UpdateUrlDto {
@@ -19,7 +19,7 @@ export class UpdateUrlDto {
   type?: UrlType;
 
   @ApiProperty({ required: false })
-  @IsDate()
+  @IsDateString()
   @IsOptional()
   expiresAt?: Date;
 }

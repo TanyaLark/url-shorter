@@ -19,6 +19,10 @@ export class UpdatedUrl extends Url {
 
   @ApiProperty()
   @Expose()
+  alias: string;
+
+  @ApiProperty()
+  @Expose()
   get shortUrl(): string {
     return `${process.env.APP_ADDRESS}/url/${this.code}`;
   }

@@ -1,7 +1,7 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
 import { Repository } from 'typeorm';
-import { Url } from '../src/url/url.entity';
+import { Url, UrlType } from '../src/url/url.entity';
 import { User } from '../src/users/user.entity';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppModule } from '../src/app.module';
@@ -10,6 +10,8 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateUserDto } from '../src/users/dtos/create-user.dto';
 import { CreateUrlDto } from '../src/url/dtos/create-url.dto';
 import { SerializedUrl } from '../src/url/interceptors/serialized-url';
+import { UpdateUrlDto } from '../src/url/dtos/update-url.dto';
+import { UpdatedUrl } from '../src/url/interceptors/updated-url';
 
 describe('UrlController (e2e)', () => {
   let app: INestApplication;
@@ -213,6 +215,74 @@ describe('UrlController (e2e)', () => {
     it('should return status: 404 if urlId is not found', async () => {
       const response = await request(app.getHttpServer())
         .get('/url/id/00000000-0000-0000-0000-000000000000')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(response.status).toEqual(404);
+      expect(response.body.message).toEqual('URL not found.');
+    });
+  });
+  describe('/url/id/:urlId (PATCH)', () => {
+    it('should update the URL', async () => {
+      const updateUrlDto: UpdateUrlDto = {
+        originalUrl: 'https://nestjs.io',
+        alias: 'nestjs',
+        type: UrlType.OneTime,
+        expiresAt: new Date(),
+      };
+
+      const responseUrl = await request(app.getHttpServer())
+        .post('/url/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(urlDto);
+
+      const createdUrlBody: SerializedUrl = JSON.parse(responseUrl.text);
+
+      const response = await request(app.getHttpServer())
+        .patch(`/url/id/${createdUrlBody.id}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(updateUrlDto);
+
+      const responseBody: UpdatedUrl = JSON.parse(response.text);
+
+      expect(response.status).toEqual(200);
+      expect(responseBody.originalUrl).toEqual(updateUrlDto.originalUrl);
+      expect(responseBody.alias).toEqual(updateUrlDto.alias);
+      expect(responseBody.type).toEqual(updateUrlDto.type);
+      expect(responseBody.expiresAt).toEqual(
+        updateUrlDto.expiresAt.toISOString(),
+      );
+    });
+
+    it('should return status: 401 - Unauthorized if token is missing', async () => {
+      const response = await request(app.getHttpServer()).patch('/url/id/1');
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 401 - Unauthorized if token is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/url/id/1')
+        .set('Authorization', 'Bearer invalidToken');
+
+      expect(response.status).toEqual(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    it('should return status: 400 if urlId is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/url/id/invalidUrlId')
+        .set('Authorization', `Bearer ${jwtToken}`);
+
+      expect(response.status).toEqual(400);
+      expect(response.body.message).toEqual(
+        'Validation failed (uuid is expected)',
+      );
+    });
+
+    it('should return status: 404 if urlId is not found', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/url/id/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${jwtToken}`);
 
       expect(response.status).toEqual(404);
