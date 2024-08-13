@@ -4,8 +4,10 @@ import {
   PrimaryGeneratedColumn,
   BeforeUpdate,
   OneToMany,
+  ManyToMany,
 } from 'typeorm';
 import { Url } from '../url/url.entity';
+import { Team } from '../team/team.entity';
 
 export enum UserRole {
   Admin = 'Admin',
@@ -53,6 +55,9 @@ export class User {
 
   @OneToMany(() => Url, (url) => url.user)
   urls: Url[];
+
+  @ManyToMany(() => Team, (team) => team.users)
+  teams: Team[];
 
   @BeforeUpdate()
   updateTimestamp() {

@@ -9,6 +9,7 @@ import {
 } from 'typeorm';
 import { User } from '../users/user.entity';
 import { generateUniqueCode } from '../utils/codeGenerator';
+import { Team } from '../team/team.entity';
 
 export enum UrlType {
   Permanent = 'Permanent link',
@@ -51,6 +52,10 @@ export class Url {
   @ManyToOne(() => User, (user) => user.urls, { onDelete: 'CASCADE' })
   @JoinTable()
   user: User;
+
+  @ManyToOne(() => Team, (team) => team.urls, { onDelete: 'CASCADE' })
+  @JoinTable()
+  team: Team;
 
   @BeforeInsert()
   generateCode() {
