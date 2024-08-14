@@ -1,8 +1,15 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateTeamDto } from './dtos/create-team.dto';
 import { Team } from './team.entity';
 import { UsersRepository } from '../users/users.repository';
 import { TeamRepository } from './team.repository';
+import { UpdateTeamDto } from './dtos/update-team.dto';
+import { UUID } from '../common/types';
 
 @Injectable()
 export class TeamService {
@@ -30,5 +37,28 @@ export class TeamService {
       );
       throw error;
     }
+  }
+
+  async updateTeam(
+    userId: UUID,
+    teamId: UUID,
+    { name, icon }: UpdateTeamDto,
+  ): Promise<Team> {
+    const team = await this.teamRepository.getTeamByIdAndUserId(teamId, userId);
+    if (!team) {
+      throw new NotFoundException(`Team not found`);
+    }
+
+    if (name || icon) {
+      if (name) {
+        team.name = name;
+      }
+      if (icon) {
+        team.icon = icon;
+      }
+      return this.teamRepository.save(team);
+    }
+
+    return team;
   }
 }
