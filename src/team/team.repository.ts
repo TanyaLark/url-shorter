@@ -30,9 +30,10 @@ export class TeamRepository
     return this.dataSource
       .getRepository(Team)
       .createQueryBuilder('team')
+      .leftJoinAndSelect('team.users', 'userToSearch')
       .leftJoinAndSelect('team.users', 'users')
       .where('team.id = :teamId', { teamId })
-      .andWhere('users.id = :userId', { userId })
+      .andWhere('userToSearch.id = :userId', { userId })
       .getOne();
   }
 }

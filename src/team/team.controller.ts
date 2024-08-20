@@ -2,10 +2,13 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -23,6 +26,8 @@ import { SerializedTeam } from './interceptors/serialized-team';
 import { UpdateTeamDto } from './dtos/update-team.dto';
 import { UUID } from '../common/types';
 import { SerializedUpdatedTeam } from './interceptors/serialized-updated-team';
+import { AddMembersDto } from './dtos/add-members.dto';
+import { Team } from './team.entity';
 
 @Controller('team')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -66,5 +71,50 @@ export class TeamController {
       updateTeamDto,
     );
     return new SerializedUpdatedTeam(team);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('/delete/id/:teamId')
+  @ApiOperation({ summary: 'Delete a team' })
+  @ApiResponse({
+    status: 200,
+    description: 'The team  has been successfully deleted.',
+  })
+  async deleteTeam(
+    @UserId() userId: UUID,
+    @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
+  ): Promise<void> {
+    await this.teamService.deleteTeam(userId, teamId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('add-member/id/:teamId')
+  @ApiOperation({ summary: 'Add a member to the team' })
+  @ApiResponse({
+    status: 200,
+    description: 'The member  has been successfully added to the team.',
+  })
+  async addMember(
+    @UserId() userId: UUID,
+    @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
+    @Body() addMembersDto: AddMembersDto,
+  ): Promise<void> {
+    await this.teamService.addMembers(teamId, userId, addMembersDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('/id/:teamId')
+  @ApiOperation({ summary: 'Get a single team' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return the team',
+    type: Team,
+  })
+  async getTeamById(
+    @UserId('userID', new ParseUUIDPipe()) userId: UUID,
+    @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
+  ): Promise<Team> {
+    const team = await this.teamService.findByTeamIdAndUserId(teamId, userId);
+    return team;
   }
 }
