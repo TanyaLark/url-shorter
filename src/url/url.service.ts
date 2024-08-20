@@ -17,9 +17,18 @@ export class UrlService {
     private readonly usersRepository: UsersRepository,
   ) {}
 
-  async createUrl(payload: CreateUrlDto, userId: UUID): Promise<Url> {
-    const user = await this.usersRepository.findOneBy({ id: userId });
-    return this.urlRepository.store(payload, user);
+  async createUrl(
+    payload: CreateUrlDto,
+    userId: UUID,
+    teamId: UUID,
+  ): Promise<Url> {
+    const user = await this.usersRepository.findOne({
+      where: { id: userId },
+      relations: ['teams'],
+    });
+
+    const team = user.teams.find((team) => team.id === teamId);
+    return this.urlRepository.store(payload, user, team);
   }
 
   async findUrlsByUserId(

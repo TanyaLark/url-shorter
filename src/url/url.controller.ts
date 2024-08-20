@@ -37,7 +37,7 @@ export class UrlController {
   constructor(private urlService: UrlService) {}
 
   @UseGuards(AuthGuard)
-  @Post('/create')
+  @Post('/create/teamId/:teamId')
   @ApiOperation({ summary: 'Create a new short URL' })
   @ApiResponse({
     status: 201,
@@ -46,9 +46,10 @@ export class UrlController {
   })
   async createShortUrl(
     @UserId() userId: string,
+    @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
     @Body() createUrlDto: CreateUrlDto,
   ): Promise<SerializedUrl> {
-    const url = await this.urlService.createUrl(createUrlDto, userId);
+    const url = await this.urlService.createUrl(createUrlDto, userId, teamId);
     return new SerializedUrl(url);
   }
 
