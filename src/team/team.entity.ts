@@ -15,9 +15,7 @@ export class Team {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({
-    unique: true,
-  })
+  @Column()
   name: string;
 
   @Column({ default: null, nullable: true })
