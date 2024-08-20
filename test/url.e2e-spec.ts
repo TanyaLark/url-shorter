@@ -12,10 +12,13 @@ import { CreateUrlDto } from '../src/url/dtos/create-url.dto';
 import { SerializedUrl } from '../src/url/interceptors/serialized-url';
 import { UpdateUrlDto } from '../src/url/dtos/update-url.dto';
 import { UpdatedUrl } from '../src/url/interceptors/updated-url';
+import { UUID } from '../src/common/types';
+import { Team } from '../src/team/team.entity';
 
 describe('UrlController (e2e)', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
+  let teamRepository: Repository<Team>;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let urlRepository: Repository<Url>;
   const userDto: CreateUserDto = {
@@ -27,7 +30,9 @@ describe('UrlController (e2e)', () => {
   const urlDto: CreateUrlDto = {
     originalUrl: 'https://nestjs.com',
   };
+  const teamDto = { name: 'TeamE2E' };
   let jwtToken: string;
+  let teamId: UUID;
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -41,6 +46,9 @@ describe('UrlController (e2e)', () => {
 
     userRepository = moduleFixture.get<Repository<User>>(
       getRepositoryToken(User),
+    );
+    teamRepository = moduleFixture.get<Repository<Team>>(
+      getRepositoryToken(Team),
     );
     urlRepository = moduleFixture.get<Repository<Url>>(getRepositoryToken(Url));
 
@@ -59,6 +67,15 @@ describe('UrlController (e2e)', () => {
       .expect(200);
 
     jwtToken = response.body.access_token;
+
+    // Create a team
+    const teamResponse = await request(app.getHttpServer())
+      .post('/team/create')
+      .set('Authorization', `Bearer ${jwtToken}`)
+      .send(teamDto)
+      .expect(201);
+
+    teamId = teamResponse.body.id;
   });
 
   afterAll(async () => {
@@ -67,13 +84,18 @@ describe('UrlController (e2e)', () => {
         where: { email: userDto.email },
       }),
     );
+    await teamRepository.remove(
+      await teamRepository.find({
+        where: { name: teamDto.name },
+      }),
+    );
     await app.close();
   });
 
-  describe('/url/create (POST)', () => {
+  describe('/url/create/teamId/:teamId (POST)', () => {
     it('should return status: 201 - success', async () => {
       const responseUrl = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send(urlDto);
 
@@ -89,7 +111,7 @@ describe('UrlController (e2e)', () => {
 
     it('should return status: 401 - Unauthorized if token is missing', async () => {
       const response = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .send(urlDto);
 
       expect(response.status).toEqual(401);
@@ -98,7 +120,7 @@ describe('UrlController (e2e)', () => {
 
     it('should return status: 401 - Unauthorized if token is invalid', async () => {
       const response = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', 'Bearer invalidToken')
         .send(urlDto);
 
@@ -108,7 +130,7 @@ describe('UrlController (e2e)', () => {
 
     it('should return status: 400 if originalUrl is invalid ', async () => {
       const response = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ originalUrl: 'invalidUrl' });
 
@@ -120,7 +142,7 @@ describe('UrlController (e2e)', () => {
 
     it('should return status: 400 if longUrl is missing', async () => {
       const response = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({});
 
@@ -166,7 +188,7 @@ describe('UrlController (e2e)', () => {
   describe('/url/id/:urlId (GET)', () => {
     it('should return status: 200 - success', async () => {
       const responseUrl = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send(urlDto);
 
@@ -231,7 +253,7 @@ describe('UrlController (e2e)', () => {
       };
 
       const responseUrl = await request(app.getHttpServer())
-        .post('/url/create')
+        .post(`/url/create/teamId/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .send(urlDto);
 
