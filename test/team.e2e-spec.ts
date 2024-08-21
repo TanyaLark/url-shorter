@@ -264,4 +264,56 @@ describe('TeamController (e2e)', () => {
       expect(team.users[1].email).toBe(addUserDto.email);
     });
   });
+
+  describe('GET /team/id/:teamId', () => {
+    let teamId: string;
+    const createDto: CreateTeamDto = { name: 'TeamE2EGet' };
+
+    beforeAll(async () => {
+      const responseTeam = await request(app.getHttpServer())
+        .post('/team/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(createDto);
+
+      teamId = JSON.parse(responseTeam.text).id;
+    });
+
+    it('should return the team information', async () => {
+      const responseTeam = await request(app.getHttpServer())
+        .get(`/team/id/${teamId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
+      const responseBody: SerializedTeam = JSON.parse(responseTeam.text);
+      expect(responseBody.name).toBe(createDto.name);
+      expect(responseBody.createdAt).toBeDefined();
+      expect(responseBody.id).toBeDefined();
+    });
+
+    it('should return 400 if the teamId invalid', async () => {
+      return request(app.getHttpServer())
+        .get(`/team/id/invalidId`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+    });
+
+    it('should return 401 if the JWT token is missing', async () => {
+      return request(app.getHttpServer()).get(`/team/id/${teamId}`).expect(401);
+    });
+
+    it('should return 404 if the team does not exist', async () => {
+      return request(app.getHttpServer())
+        .get(`/team/id/123e4567-e89b-12d3-a456-426614174000`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(404);
+    });
+
+    afterAll(async () => {
+      await teamRepository.remove(
+        await teamRepository.find({
+          where: { name: createDto.name },
+        }),
+      );
+    });
+  });
 });
