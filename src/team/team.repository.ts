@@ -8,6 +8,7 @@ import { UUID } from '../common/types';
 export interface ITeamRepository {
   createTeam(createTeamDto: CreateTeamDto, user: User): Promise<Team>;
   getTeamByIdAndUserId(teamId: UUID, userId: UUID): Promise<Team>;
+  getTeamsByUserId(userId: UUID): Promise<Team[]>;
 }
 
 @Injectable()
@@ -35,5 +36,14 @@ export class TeamRepository
       .where('team.id = :teamId', { teamId })
       .andWhere('userToSearch.id = :userId', { userId })
       .getOne();
+  }
+
+  async getTeamsByUserId(userId: UUID): Promise<Team[]> {
+    return this.dataSource
+      .getRepository(Team)
+      .createQueryBuilder('team')
+      .leftJoinAndSelect('team.users', 'user')
+      .where('user.id = :userId', { userId })
+      .getMany();
   }
 }

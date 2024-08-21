@@ -117,4 +117,17 @@ export class TeamController {
     const team = await this.teamService.findByTeamIdAndUserId(teamId, userId);
     return team;
   }
+
+  @UseGuards(AuthGuard)
+  @Get('/all')
+  @ApiOperation({ summary: 'Get all user teams' })
+  @ApiResponse({
+    status: 200,
+    description: 'Return all user teams',
+    type: [SerializedTeam],
+  })
+  async getAllTeams(@UserId() userId: UUID): Promise<SerializedTeam[]> {
+    const teams = await this.teamService.findAllUserTeams(userId);
+    return teams.map((team) => new SerializedTeam(team));
+  }
 }

@@ -97,4 +97,12 @@ export class TeamService {
     }
     return team;
   }
+
+  async findAllUserTeams(userId: UUID): Promise<Team[]> {
+    const teams = this.teamRepository.getTeamsByUserId(userId);
+    if (!teams) {
+      throw new NotFoundException(`Teams not found`);
+    }
+    return teams;
+  }
 }
