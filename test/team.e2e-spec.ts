@@ -13,6 +13,7 @@ import { SerializedTeam } from '../src/team/interceptors/serialized-team';
 import { UpdateTeamDto } from '../src/team/dtos/update-team.dto';
 import { SerializedUpdatedTeam } from '../src/team/interceptors/serialized-updated-team';
 import { faker } from '@faker-js/faker';
+import { AddMembersDto } from '../src/team/dtos/add-members.dto';
 
 describe('TeamController (e2e)', () => {
   let app: INestApplication;
@@ -207,6 +208,60 @@ describe('TeamController (e2e)', () => {
         .delete(`/team/delete/id/123e4567-e89b-12d3-a456-426614174000`)
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(404);
+    });
+  });
+
+  describe('PUT /team/add-member/id/:teamId', () => {
+    let teamId: string;
+    const createDto: CreateTeamDto = { name: 'TeamE2EAddMember' };
+
+    beforeAll(async () => {
+      const responseTeam = await request(app.getHttpServer())
+        .post('/team/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(createDto);
+
+      teamId = JSON.parse(responseTeam.text).id;
+    });
+
+    afterAll(async () => {
+      await teamRepository.remove(
+        await teamRepository.find({
+          where: { name: createDto.name },
+        }),
+      );
+    });
+
+    it('should add a member to the team', async () => {
+      const addUserDto: CreateUserDto = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: faker.internet.email(),
+        password: 'passwordMock123@',
+      };
+
+      const addMemberDto: AddMembersDto = {
+        membersEmails: [addUserDto.email],
+      };
+
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(addUserDto)
+        .expect(201);
+
+      await request(app.getHttpServer())
+        .put(`/team/add-member/id/${teamId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(addMemberDto)
+        .expect(200);
+
+      const team = await teamRepository.findOne({
+        where: { id: teamId },
+        relations: ['users'],
+      });
+
+      expect(team.users).toHaveLength(2);
+      expect(team.users[1].email).toBe(addUserDto.email);
     });
   });
 });
