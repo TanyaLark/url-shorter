@@ -12,6 +12,7 @@ import { CreateTeamDto } from '../src/team/dtos/create-team.dto';
 import { SerializedTeam } from '../src/team/interceptors/serialized-team';
 import { UpdateTeamDto } from '../src/team/dtos/update-team.dto';
 import { SerializedUpdatedTeam } from '../src/team/interceptors/serialized-updated-team';
+import { faker } from '@faker-js/faker';
 
 describe('TeamController (e2e)', () => {
   let app: INestApplication;
@@ -23,7 +24,7 @@ describe('TeamController (e2e)', () => {
     email: 'johndoeTeam@example.com',
     password: 'e2eTeamPassWord123@',
   };
-  const teamDto: CreateTeamDto = { name: 'TeamE2E' };
+  const teamDto: CreateTeamDto = { name: faker.company.name() };
   let jwtToken: string;
 
   beforeAll(async () => {
@@ -162,6 +163,50 @@ describe('TeamController (e2e)', () => {
           where: { name: updateDto.name },
         }),
       );
+    });
+  });
+
+  describe('DELETE /team/delete/id/:teamId', () => {
+    let teamId: string;
+    const createDto: CreateTeamDto = { name: 'TeamE2EDelete' };
+
+    beforeAll(async () => {
+      const responseTeam = await request(app.getHttpServer())
+        .post('/team/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(createDto);
+
+      teamId = JSON.parse(responseTeam.text).id;
+    });
+
+    it('should delete the team', async () => {
+      await request(app.getHttpServer())
+        .delete(`/team/delete/id/${teamId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
+      const team = await teamRepository.findOne({ where: { id: teamId } });
+      expect(team).toBeNull();
+    });
+
+    it('should return 400 if the teamId invalid', async () => {
+      return request(app.getHttpServer())
+        .delete(`/team/delete/id/invalidId`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(400);
+    });
+
+    it('should return 401 if the JWT token is missing', async () => {
+      return request(app.getHttpServer())
+        .delete(`/team/delete/id/${teamId}`)
+        .expect(401);
+    });
+
+    it('should return 404 if the team does not exist', async () => {
+      return request(app.getHttpServer())
+        .delete(`/team/delete/id/123e4567-e89b-12d3-a456-426614174000`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(404);
     });
   });
 });
