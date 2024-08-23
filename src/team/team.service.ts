@@ -99,8 +99,8 @@ export class TeamService {
   }
 
   async findAllUserTeams(userId: UUID): Promise<Team[]> {
-    const teams = this.teamRepository.getTeamsByUserId(userId);
-    if (!teams) {
+    const teams = await this.teamRepository.getTeamsByUserId(userId);
+    if (!teams || !teams.length) {
       throw new NotFoundException(`Teams not found`);
     }
     return teams;

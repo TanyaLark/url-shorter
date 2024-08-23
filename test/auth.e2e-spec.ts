@@ -8,10 +8,12 @@ import { Repository } from 'typeorm';
 import { User } from '../src/users/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateUserDto } from '../src/users/dtos/create-user.dto';
+import { Team } from '../src/team/team.entity';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
   let userRepository: Repository<User>;
+  let teamRepository: Repository<Team>;
   const emailStorage = [];
   const passwordMock = 'Password@123!';
 
@@ -28,14 +30,22 @@ describe('AuthController (e2e)', () => {
     userRepository = moduleFixture.get<Repository<User>>(
       getRepositoryToken(User),
     );
+    teamRepository = moduleFixture.get<Repository<Team>>(
+      getRepositoryToken(Team),
+    );
   });
 
   afterAll(async () => {
-    await userRepository.remove(
-      await userRepository.find({
-        where: emailStorage.map((email) => ({ email })),
-      }),
-    );
+    //remove user and all user teams
+    const users = await userRepository.find({
+      where: emailStorage.map((email) => ({ email })),
+      relations: ['teams'],
+    });
+
+    for (const user of users) {
+      await teamRepository.remove(user.teams);
+    }
+    await userRepository.remove(users);
     await app.close();
   });
 

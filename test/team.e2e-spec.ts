@@ -1,6 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import * as request from 'supertest';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Team } from '../src/team/team.entity';
 import { User } from '../src/users/user.entity';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -63,16 +63,13 @@ describe('TeamController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await userRepository.remove(
-      await userRepository.find({
-        where: { email: userDto.email },
-      }),
-    );
-    await teamRepository.remove(
-      await teamRepository.find({
-        where: { name: teamDto.name },
-      }),
-    );
+    //remove user and all user teams
+    const user = await userRepository.findOne({
+      where: { email: userDto.email },
+      relations: ['teams'],
+    });
+    await teamRepository.remove(user.teams);
+    await userRepository.remove(user);
     await app.close();
   });
 
@@ -120,6 +117,14 @@ describe('TeamController (e2e)', () => {
       teamId = JSON.parse(responseTeam.text).id;
     });
 
+    afterAll(async () => {
+      await teamRepository.remove(
+        await teamRepository.find({
+          where: { name: updateDto.name },
+        }),
+      );
+    });
+
     it('should update the team information', async () => {
       const responseTeam = await request(app.getHttpServer())
         .patch(`/team/update/id/${teamId}`)
@@ -156,14 +161,6 @@ describe('TeamController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}`)
         .send({ name: 'TeamE2EUpdated' })
         .expect(404);
-    });
-
-    afterAll(async () => {
-      await teamRepository.remove(
-        await teamRepository.find({
-          where: { name: updateDto.name },
-        }),
-      );
     });
   });
 
@@ -213,13 +210,19 @@ describe('TeamController (e2e)', () => {
 
   describe('PUT /team/add-member/id/:teamId', () => {
     let teamId: string;
-    const createDto: CreateTeamDto = { name: 'TeamE2EAddMember' };
+    const createTeamDto: CreateTeamDto = { name: 'TeamE2EAddMember' };
+    const addUserDto: CreateUserDto = {
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      email: faker.internet.email(),
+      password: 'passwordMock123@',
+    };
 
     beforeAll(async () => {
       const responseTeam = await request(app.getHttpServer())
         .post('/team/create')
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send(createDto);
+        .send(createTeamDto);
 
       teamId = JSON.parse(responseTeam.text).id;
     });
@@ -227,19 +230,19 @@ describe('TeamController (e2e)', () => {
     afterAll(async () => {
       await teamRepository.remove(
         await teamRepository.find({
-          where: { name: createDto.name },
+          where: { name: createTeamDto.name },
         }),
       );
+      //remove user and all user teams
+      const user = await userRepository.findOne({
+        where: { email: addUserDto.email },
+        relations: ['teams'],
+      });
+      await teamRepository.remove(user.teams);
+      await userRepository.remove(user);
     });
 
     it('should add a member to the team', async () => {
-      const addUserDto: CreateUserDto = {
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
-        email: faker.internet.email(),
-        password: 'passwordMock123@',
-      };
-
       const addMemberDto: AddMembersDto = {
         membersEmails: [addUserDto.email],
       };
@@ -267,15 +270,23 @@ describe('TeamController (e2e)', () => {
 
   describe('GET /team/id/:teamId', () => {
     let teamId: string;
-    const createDto: CreateTeamDto = { name: 'TeamE2EGet' };
+    const createTeamDto: CreateTeamDto = { name: 'TeamE2EGet' };
 
     beforeAll(async () => {
       const responseTeam = await request(app.getHttpServer())
         .post('/team/create')
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send(createDto);
+        .send(createTeamDto);
 
       teamId = JSON.parse(responseTeam.text).id;
+    });
+
+    afterAll(async () => {
+      await teamRepository.remove(
+        await teamRepository.find({
+          where: { name: createTeamDto.name },
+        }),
+      );
     });
 
     it('should return the team information', async () => {
@@ -285,7 +296,7 @@ describe('TeamController (e2e)', () => {
         .expect(200);
 
       const responseBody: SerializedTeam = JSON.parse(responseTeam.text);
-      expect(responseBody.name).toBe(createDto.name);
+      expect(responseBody.name).toBe(createTeamDto.name);
       expect(responseBody.createdAt).toBeDefined();
       expect(responseBody.id).toBeDefined();
     });
@@ -307,13 +318,38 @@ describe('TeamController (e2e)', () => {
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(404);
     });
+  });
 
-    afterAll(async () => {
-      await teamRepository.remove(
-        await teamRepository.find({
-          where: { name: createDto.name },
-        }),
-      );
+  describe('GET /team/all', () => {
+    it('should return all teams', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/team/all')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
+      expect(response.body).toBeInstanceOf(Array);
+    });
+
+    it('should return 401 if the JWT token is missing', async () => {
+      return request(app.getHttpServer()).get('/team/all').expect(401);
+    });
+
+    it('should return 404 not found if the user has no teams', async () => {
+      const teams = await request(app.getHttpServer())
+        .get('/team/all')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(200);
+
+      const teamIds = teams.body.map((team: SerializedTeam) => team.id);
+      const teamsToRemove = await teamRepository.find({
+        where: { id: In(teamIds) },
+      });
+      await teamRepository.remove(teamsToRemove);
+
+      return await request(app.getHttpServer())
+        .get('/team/all')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .expect(404);
     });
   });
 });
