@@ -28,6 +28,8 @@ import { UUID } from '../common/types';
 import { SerializedUpdatedTeam } from './interceptors/serialized-updated-team';
 import { AddMembersDto } from './dtos/add-members.dto';
 import { Team } from './team.entity';
+import { RemoveMembersDto } from './dtos/remove-members.dto';
+import { RemoveMemberResDto } from './dtos/remove-member-res.dto';
 
 @Controller('team')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -88,18 +90,38 @@ export class TeamController {
   }
 
   @UseGuards(AuthGuard)
-  @Put('add-member/id/:teamId')
-  @ApiOperation({ summary: 'Add a member to the team' })
+  @Put('add-members/team-id/:teamId')
+  @ApiOperation({ summary: 'Add members to the team' })
   @ApiResponse({
     status: 200,
-    description: 'The member  has been successfully added to the team.',
+    description: 'Members have been successfully added to the team.',
   })
-  async addMember(
+  async addMembers(
     @UserId() userId: UUID,
     @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
     @Body() addMembersDto: AddMembersDto,
   ): Promise<void> {
     await this.teamService.addMembers(teamId, userId, addMembersDto);
+  }
+
+  @UseGuards(AuthGuard)
+  @Put('/remove-members/team-id/:teamId')
+  @ApiOperation({ summary: 'Remove a member from the team' })
+  @ApiResponse({
+    status: 200,
+    description: 'The member  has been successfully removed from the team.',
+    type: RemoveMemberResDto,
+  })
+  async removeMembers(
+    @UserId() userId: UUID,
+    @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
+    @Body() removeMembersDto: RemoveMembersDto,
+  ): Promise<RemoveMemberResDto> {
+    return await this.teamService.removeMembers(
+      teamId,
+      userId,
+      removeMembersDto,
+    );
   }
 
   @UseGuards(AuthGuard)

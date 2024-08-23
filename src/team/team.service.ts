@@ -12,6 +12,8 @@ import { UpdateTeamDto } from './dtos/update-team.dto';
 import { UUID } from '../common/types';
 import { AddMembersDto } from './dtos/add-members.dto';
 import { In } from 'typeorm';
+import { RemoveMembersDto } from './dtos/remove-members.dto';
+import { RemoveMemberResDto } from './dtos/remove-member-res.dto';
 
 @Injectable()
 export class TeamService {
@@ -88,6 +90,45 @@ export class TeamService {
     team.users = [...users, ...newMembers];
     team.updatedAt = new Date();
     await this.teamRepository.save(team);
+  }
+
+  async removeMembers(
+    teamId: UUID,
+    userId: UUID,
+    removeMembersDto: RemoveMembersDto,
+  ): Promise<RemoveMemberResDto> {
+    let message = 'Members have been successfully removed from the team.';
+    const team = await this.findByTeamIdAndUserId(teamId, userId);
+    if (!team) {
+      throw new Error(
+        'Team not found or user does not have access to the team.',
+      );
+    }
+    const members = await this.usersRepository.findBy({
+      email: In(removeMembersDto.membersEmails),
+    });
+
+    if (members.length === 0) {
+      throw new NotFoundException(`Members not found`);
+    }
+
+    if (members.length !== removeMembersDto.membersEmails.length) {
+      const notFoundMembers = removeMembersDto.membersEmails.filter(
+        (email) => !members.find((member) => member.email === email),
+      );
+      message += `Some members not found: ${notFoundMembers.join(',')}`;
+    }
+
+    const membersToRemove = members.filter((member) =>
+      team.users.some((user) => user.id === member.id),
+    );
+
+    team.users = team.users.filter(
+      (user) => !membersToRemove.some((member) => member.id === user.id),
+    );
+    team.updatedAt = new Date();
+    await this.teamRepository.save(team);
+    return { message };
   }
 
   async findByTeamIdAndUserId(teamId: UUID, userId: UUID): Promise<Team> {
