@@ -3,7 +3,7 @@ import { User, UserRole } from '../../users/user.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 @Exclude()
-export class SerializedUser extends User {
+export class SerializedRegisteredUser extends User {
   @ApiProperty()
   @Expose()
   id: string;
@@ -26,7 +26,7 @@ export class SerializedUser extends User {
   @Expose()
   createdAt: Date;
 
-  constructor(partial: Partial<SerializedUser>) {
+  constructor(partial: Partial<SerializedRegisteredUser>) {
     super();
     Object.assign(this, partial);
   }

@@ -13,7 +13,7 @@ import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from '../users/dtos/create-user.dto';
 import { RegisterResponseDto } from './dto/sign-up-res.dto';
 import { LoginResponseDto } from './dto/login-res.dto';
-import { SerializedUser } from './interceptors/serialized-registered-user';
+import { SerializedRegisteredUser } from './interceptors/serialized-registered-user';
 
 @Controller('auth')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -34,7 +34,7 @@ export class AuthController {
       return {
         status: HttpStatus.CREATED,
         description: 'User registered',
-        user: new SerializedUser(createdUser),
+        user: new SerializedRegisteredUser(createdUser),
       };
     }
   }
