@@ -79,16 +79,16 @@ describe('UrlController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await userRepository.remove(
-      await userRepository.find({
-        where: { email: userDto.email },
-      }),
-    );
-    await teamRepository.remove(
-      await teamRepository.find({
-        where: { name: teamDto.name },
-      }),
-    );
+    //remove user and all user teams
+    const users = await userRepository.find({
+      where: { email: userDto.email },
+      relations: ['teams'],
+    });
+
+    for (const user of users) {
+      await teamRepository.remove(user.teams);
+    }
+    await userRepository.remove(users);
     await app.close();
   });
 
