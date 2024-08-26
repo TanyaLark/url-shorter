@@ -27,9 +27,9 @@ import { UpdateTeamDto } from './dtos/update-team.dto';
 import { UUID } from '../common/types';
 import { SerializedUpdatedTeam } from './interceptors/serialized-updated-team';
 import { AddMembersDto } from './dtos/add-members.dto';
-import { Team } from './team.entity';
 import { RemoveMembersDto } from './dtos/remove-members.dto';
 import { RemoveMemberResDto } from './dtos/remove-member-res.dto';
+import { SerializedGetTeam } from './interceptors/serialized-get-team';
 
 @Controller('team')
 @UseInterceptors(ClassSerializerInterceptor)
@@ -130,14 +130,14 @@ export class TeamController {
   @ApiResponse({
     status: 200,
     description: 'Return the team',
-    type: Team,
+    type: SerializedGetTeam,
   })
   async getTeamById(
     @UserId('userID', new ParseUUIDPipe()) userId: UUID,
     @Param('teamId', new ParseUUIDPipe()) teamId: UUID,
-  ): Promise<Team> {
+  ): Promise<SerializedGetTeam> {
     const team = await this.teamService.findByTeamIdAndUserId(teamId, userId);
-    return team;
+    return new SerializedGetTeam(team);
   }
 
   @UseGuards(AuthGuard)
