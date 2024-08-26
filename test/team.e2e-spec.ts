@@ -211,7 +211,7 @@ describe('TeamController (e2e)', () => {
   describe('PUT /team/add-member/id/:teamId', () => {
     let teamId: string;
     const createTeamDto: CreateTeamDto = { name: 'TeamE2EAddMember' };
-    const addUserDto: CreateUserDto = {
+    const memberDto: CreateUserDto = {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       email: faker.internet.email(),
@@ -225,6 +225,12 @@ describe('TeamController (e2e)', () => {
         .send(createTeamDto);
 
       teamId = JSON.parse(responseTeam.text).id;
+
+      // Create a member
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(memberDto)
+        .expect(201);
     });
 
     afterAll(async () => {
@@ -233,9 +239,9 @@ describe('TeamController (e2e)', () => {
           where: { name: createTeamDto.name },
         }),
       );
-      //remove user and all user teams
+      //remove member and all member teams
       const user = await userRepository.findOne({
-        where: { email: addUserDto.email },
+        where: { email: memberDto.email },
         relations: ['teams'],
       });
       await teamRepository.remove(user.teams);
@@ -244,27 +250,22 @@ describe('TeamController (e2e)', () => {
 
     it('should add a member to the team', async () => {
       const addMemberDto: AddMembersDto = {
-        membersEmails: [addUserDto.email],
+        membersEmails: [memberDto.email],
       };
 
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send(addUserDto)
-        .expect(201);
-
-      await request(app.getHttpServer())
-        .put(`/team/add-member/id/${teamId}`)
+      const addMemberRes = await request(app.getHttpServer())
+        .put(`/team/add-members/team-id/${teamId}`)
         .set('Authorization', `Bearer ${jwtToken}`)
-        .send(addMemberDto)
-        .expect(200);
+        .send(addMemberDto);
 
       const team = await teamRepository.findOne({
         where: { id: teamId },
         relations: ['users'],
       });
 
+      expect(addMemberRes.status).toEqual(200);
       expect(team.users).toHaveLength(2);
-      expect(team.users[1].email).toBe(addUserDto.email);
+      expect(team.users[1].email).toBe(memberDto.email);
     });
   });
 
@@ -350,6 +351,73 @@ describe('TeamController (e2e)', () => {
         .get('/team/all')
         .set('Authorization', `Bearer ${jwtToken}`)
         .expect(404);
+    });
+  });
+
+  describe('PUT /team/remove-members/team-id/:teamId', () => {
+    let teamId: string;
+    const createTeamDto: CreateTeamDto = { name: 'TeamE2ERemoveMember' };
+    const memberDto: CreateUserDto = {
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      email: faker.internet.email(),
+      password: 'passwordMock123@',
+    };
+
+    beforeAll(async () => {
+      const responseTeam = await request(app.getHttpServer())
+        .post('/team/create')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(createTeamDto);
+
+      teamId = JSON.parse(responseTeam.text).id;
+
+      // Create a member
+      await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(memberDto)
+        .expect(201);
+    });
+
+    afterAll(async () => {
+      await teamRepository.remove(
+        await teamRepository.find({
+          where: { name: createTeamDto.name },
+        }),
+      );
+      //remove member and all member teams
+      const user = await userRepository.findOne({
+        where: { email: memberDto.email },
+        relations: ['teams'],
+      });
+      await teamRepository.remove(user.teams);
+      await userRepository.remove(user);
+    });
+
+    it('should remove a member from the team', async () => {
+      const addMemberDto: AddMembersDto = {
+        membersEmails: [memberDto.email],
+      };
+
+      await request(app.getHttpServer())
+        .put(`/team/add-members/team-id/${teamId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(addMemberDto)
+        .expect(200);
+
+      const removeMemberRes = await request(app.getHttpServer())
+        .put(`/team/remove-members/team-id/${teamId}`)
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send(addMemberDto);
+
+      const team = await teamRepository.findOne({
+        where: { id: teamId },
+        relations: ['users'],
+      });
+
+      expect(removeMemberRes.status).toEqual(200);
+      expect(team.users).toHaveLength(1);
+      expect(team.users[0].email).toBe(userDto.email);
     });
   });
 });
