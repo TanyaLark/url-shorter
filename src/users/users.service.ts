@@ -4,6 +4,7 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { User } from './user.entity';
 import { TeamRepository } from '../team/team.repository';
 import { CreateTeamDto } from '../team/dtos/create-team.dto';
+import { UUID } from '../common/types';
 @Injectable()
 export class UsersService {
   private logger = new Logger(UsersService.name);
@@ -41,6 +42,17 @@ export class UsersService {
       return user;
     } catch (error) {
       this.logger.log(`UsersService:findOne: ${JSON.stringify(error.message)}`);
+      throw new Error(error.message);
+    }
+  }
+
+  async getUserInfo(userId: UUID): Promise<User> {
+    try {
+      return this.usersRepository.getUserInfo(userId);
+    } catch (error) {
+      this.logger.log(
+        `UsersService:getUserInfo: ${JSON.stringify(error.message)}`,
+      );
       throw new Error(error.message);
     }
   }
