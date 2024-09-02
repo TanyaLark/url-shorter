@@ -47,6 +47,9 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: null, nullable: true })
+  avatar: string;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
 
