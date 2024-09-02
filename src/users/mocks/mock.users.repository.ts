@@ -31,4 +31,21 @@ export class MockUsersRepository implements IUsersRepository {
       updatedAt: null,
     } as User;
   }
+
+  public async getUserInfo(userId: string): Promise<User> {
+    return {
+      id: userId,
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'exampleEmail@gmail.com',
+      passwordHash: 'someHash',
+      salt: 'someSalt',
+      emailConfirmToken: null,
+      emailConfirmed: true,
+      role: UserRole.User,
+      isActive: true,
+      createdAt: new Date('2024-07-08T10:36:35.989Z'),
+      updatedAt: null,
+    } as User;
+  }
 }
