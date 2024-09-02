@@ -1,10 +1,16 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { User } from './user.entity';
 import { TeamRepository } from '../team/team.repository';
 import { CreateTeamDto } from '../team/dtos/create-team.dto';
 import { UUID } from '../common/types';
+import { UpdateUserDto } from './dtos/update-user.dto';
 @Injectable()
 export class UsersService {
   private logger = new Logger(UsersService.name);
@@ -55,5 +61,23 @@ export class UsersService {
       );
       throw new Error(error.message);
     }
+  }
+
+  async update(userId: UUID, user: UpdateUserDto): Promise<User> {
+    const { firstName, lastName, avatar } = user;
+    const foundedUser = await this.usersRepository.findOneBy({ id: userId });
+    if (!foundedUser) {
+      throw new NotFoundException('User not found');
+    }
+    if (firstName) {
+      foundedUser.firstName = firstName;
+    }
+    if (lastName) {
+      foundedUser.lastName = lastName;
+    }
+    if (avatar) {
+      foundedUser.avatar = avatar;
+    }
+    return this.usersRepository.save(foundedUser);
   }
 }

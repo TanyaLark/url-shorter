@@ -37,6 +37,10 @@ export class SerializedUserInfo extends User {
 
   @ApiProperty()
   @Expose()
+  avatar: string;
+
+  @ApiProperty()
+  @Expose()
   createdAt: Date;
 
   @ApiProperty()

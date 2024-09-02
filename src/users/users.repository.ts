@@ -7,6 +7,7 @@ import { UUID } from '../common/types';
 
 export interface IUsersRepository {
   store(user: CreateUserDto): Promise<User>;
+  getUserInfo(userId: UUID): Promise<User>;
 }
 
 @Injectable()
