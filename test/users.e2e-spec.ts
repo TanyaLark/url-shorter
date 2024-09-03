@@ -105,4 +105,41 @@ describe('UsersController (e2e)', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('/users/update (PATCH)', () => {
+    it('should return status: 200 and Serialized User Info', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/users/update')
+        .set('Authorization', `Bearer ${jwtToken}`)
+        .send({
+          firstName: faker.person.firstName(),
+          lastName: faker.person.lastName(),
+        });
+      const responseBody: SerializedUserInfo = JSON.parse(response.text);
+      expect(response.status).toBe(200);
+      expect(responseBody.id).toBe(userId);
+      expect(responseBody.firstName).toBeDefined();
+      expect(responseBody.lastName).toBeDefined();
+      expect(responseBody.email).toBeDefined();
+      expect(responseBody.emailConfirmed).toBeDefined();
+      expect(responseBody.role).toBeDefined();
+      expect(responseBody.isActive).toBeDefined();
+      expect(responseBody.createdAt).toBeDefined();
+      expect(responseBody.updatedAt).toBeDefined();
+    });
+
+    it('should return status: 401 when Authorization header is missing', async () => {
+      const response = await request(app.getHttpServer()).patch(
+        '/users/update',
+      );
+      expect(response.status).toBe(401);
+    });
+
+    it('should return status: 401 when Authorization header is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .patch('/users/update')
+        .set('Authorization', `Bearer invalid_token`);
+      expect(response.status).toBe(401);
+    });
+  });
 });
