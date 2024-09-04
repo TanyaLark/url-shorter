@@ -2,6 +2,7 @@ import {
   Body,
   ClassSerializerInterceptor,
   Controller,
+  Delete,
   Get,
   Patch,
   UseGuards,
@@ -54,5 +55,16 @@ export class UsersController {
   ): Promise<SerializedUserInfo> {
     const user = await this.usersService.update(userId, updateUserDto);
     return new SerializedUserInfo(user);
+  }
+
+  @UseGuards(AuthGuard)
+  @Delete('delete')
+  @ApiOperation({ summary: 'Delete user account' })
+  @ApiResponse({
+    status: 200,
+    description: 'User account has been successfully deleted',
+  })
+  async delete(@UserId() userId: UUID): Promise<void> {
+    await this.usersService.delete(userId);
   }
 }

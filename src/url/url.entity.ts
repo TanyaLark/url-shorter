@@ -49,7 +49,7 @@ export class Url {
   @Column({ default: null, nullable: true })
   expiresAt: Date;
 
-  @ManyToOne(() => User, (user) => user.urls, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.urls, { onDelete: 'SET NULL' })
   @JoinTable()
   user: User;
 

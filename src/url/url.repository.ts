@@ -7,6 +7,7 @@ import { Team } from '../team/team.entity';
 
 export interface IUrlRepository {
   store(createUrlDto: CreateUrlDto, user: User, team: Team): Promise<Url>;
+  getUrlByTeamId(teamId: string): Promise<Url[]>;
 }
 
 @Injectable()
@@ -23,5 +24,14 @@ export class UrlRepository extends Repository<Url> implements IUrlRepository {
     const payload = { ...createUrlDto, user, team };
     const newUrl = this.create(payload);
     return this.save(newUrl);
+  }
+
+  public async getUrlByTeamId(teamId: string): Promise<Url[]> {
+    const urls = await this.dataSource
+      .createQueryBuilder(Url, 'url')
+      .leftJoinAndSelect('url.team', 'team')
+      .where('team.id = :teamId', { teamId })
+      .getMany();
+    return urls;
   }
 }
