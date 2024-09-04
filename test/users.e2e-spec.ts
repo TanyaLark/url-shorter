@@ -142,4 +142,64 @@ describe('UsersController (e2e)', () => {
       expect(response.status).toBe(401);
     });
   });
+
+  describe('/users/delete (DELETE)', () => {
+    it('should delete the user and return status: 200', async () => {
+      // Create a user and get the JWT token
+      const deleteUserDto: CreateUserDto = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: faker.internet.email(),
+        password: 'Password@123!',
+      };
+      const userResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(deleteUserDto)
+        .expect(201);
+      const userToDelete = userResponse.body.user;
+
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          email: userToDelete.email,
+          password: deleteUserDto.password,
+        })
+        .expect(200);
+
+      const userId = userToDelete.id;
+      const token = loginResponse.body.access_token;
+
+      const response = await request(app.getHttpServer())
+        .delete('/users/delete')
+        .set('Authorization', `Bearer ${token}`);
+      expect(response.status).toBe(200);
+
+      const user = await userRepository.findOne({
+        where: { id: userId },
+      });
+      expect(user).toBeNull();
+    });
+
+    it('should return status: 401 when Authorization header is missing', async () => {
+      const response = await request(app.getHttpServer()).delete(
+        '/users/delete',
+      );
+      expect(response.status).toBe(401);
+    });
+
+    it('should return status: 401 when Authorization header is invalid', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/users/delete')
+        .set('Authorization', `Bearer invalid_token`);
+      expect(response.status).toBe(401);
+    });
+
+    it('should remove the Team and the user URLs if the Team only has this one user', async () => {
+      //todo implement this test
+    });
+
+    it('should not remove the Team and the user URLs if the Team has multiple users', async () => {
+      //todo implement this test
+    });
+  });
 });
