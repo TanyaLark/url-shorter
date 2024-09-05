@@ -24,18 +24,45 @@ export class AuthService {
     if (!email || !pass) {
       throw new BadRequestException();
     }
-    const user = await this.usersService.findUserByEmail(email);
-    const hash = await bcrypt.hash(pass, user.salt);
-    if (user?.passwordHash !== hash) {
-      throw new UnauthorizedException();
+
+    try {
+      const user = await this.usersService.findUserByEmail(email);
+      const hash = await bcrypt.hash(pass, user.salt);
+      if (user?.passwordHash !== hash) {
+        throw new UnauthorizedException('Incorrect email or password');
+      }
+      const payload = { sub: user.id, email: user.email };
+      const options = {
+        secret: process.env.JWT_SECRET,
+        expiresIn: '1d',
+      };
+      return {
+        access_token: await this.jwtService.signAsync(payload, options),
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Incorrect email or password');
     }
-    const payload = { sub: user.id, email: user.email };
-    const options = {
-      secret: process.env.JWT_SECRET,
-      expiresIn: '1d',
-    };
-    return {
-      access_token: await this.jwtService.signAsync(payload, options),
-    };
+  }
+
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<void> {
+    try {
+      const user = await this.usersService.getUserInfo(userId);
+      const oldPasswordHash = await bcrypt.hash(oldPassword, user.salt);
+      if (user.passwordHash !== oldPasswordHash) {
+        throw new UnauthorizedException('Old password is incorrect');
+      }
+      const salt = await bcrypt.genSalt();
+      const newPasswordHash = await bcrypt.hash(newPassword, salt);
+      await this.usersService.updatePassword(userId, newPasswordHash, salt);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw new UnauthorizedException('Incorrect old password');
+      }
+      throw error;
+    }
   }
 }

@@ -50,13 +50,17 @@ export class UsersService {
       return user;
     } catch (error) {
       this.logger.log(`UsersService:findOne: ${JSON.stringify(error.message)}`);
-      throw new Error(error.message);
+      throw error;
     }
   }
 
   async getUserInfo(userId: UUID): Promise<User> {
     try {
-      return this.usersRepository.getUserInfo(userId);
+      const user = this.usersRepository.getUserInfo(userId);
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+      return user;
     } catch (error) {
       this.logger.log(
         `UsersService:getUserInfo: ${JSON.stringify(error.message)}`,
@@ -111,5 +115,16 @@ export class UsersService {
       this.logger.log(`UsersService:delete: ${JSON.stringify(error.message)}`);
       throw new Error(error.message);
     }
+  }
+
+  async updatePassword(
+    userId: UUID,
+    newPasswordHash: string,
+    newSalt: string,
+  ): Promise<void> {
+    const user = await this.usersRepository.getUserInfo(userId);
+    user.passwordHash = newPasswordHash;
+    user.salt = newSalt;
+    await this.usersRepository.save(user);
   }
 }
