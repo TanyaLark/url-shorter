@@ -53,14 +53,14 @@ export class AuthService {
       const user = await this.usersService.getUserInfo(userId);
       const oldPasswordHash = await bcrypt.hash(oldPassword, user.salt);
       if (user.passwordHash !== oldPasswordHash) {
-        throw new UnauthorizedException('Old password is incorrect');
+        throw new BadRequestException('Old password is incorrect');
       }
       const salt = await bcrypt.genSalt();
       const newPasswordHash = await bcrypt.hash(newPassword, salt);
       await this.usersService.updatePassword(userId, newPasswordHash, salt);
     } catch (error) {
-      if (error instanceof UnauthorizedException) {
-        throw new UnauthorizedException('Incorrect old password');
+      if (error instanceof BadRequestException) {
+        throw new BadRequestException('Incorrect old password');
       }
       throw error;
     }

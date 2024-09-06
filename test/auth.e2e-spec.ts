@@ -9,6 +9,7 @@ import { User } from '../src/users/user.entity';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { CreateUserDto } from '../src/users/dtos/create-user.dto';
 import { Team } from '../src/team/team.entity';
+import { ChangePasswordDto } from '../src/auth/dto/change-password-dto';
 
 describe('AuthController (e2e)', () => {
   let app: INestApplication;
@@ -157,7 +158,7 @@ describe('AuthController (e2e)', () => {
       expect(res.message).toEqual(expected);
     });
 
-    it('should return 401 Unauthorized', async () => {
+    it('should return 401 Unauthorized and message "Incorrect email or password"', async () => {
       const userDto = {
         email: emailStorage[0],
         password: 'wrong_Password@123',
@@ -169,7 +170,102 @@ describe('AuthController (e2e)', () => {
         .expect(401);
       const res = JSON.parse(response.text);
 
-      expect(res.message).toEqual('Unauthorized');
+      expect(res.message).toEqual('Incorrect email or password');
+    });
+  });
+
+  describe('/auth/change-password (POST)', () => {
+    const userData = {
+      userId: null,
+      token: null,
+    };
+    const changePasswordDto: ChangePasswordDto = {
+      oldPassword: '',
+      newPassword: 'NewPassword@123!',
+    };
+
+    beforeAll(async () => {
+      // Create a user and get the JWT token
+      const userToChangePassDto: CreateUserDto = {
+        firstName: faker.person.firstName(),
+        lastName: faker.person.lastName(),
+        email: faker.internet.email(),
+        password: 'Password@123!',
+      };
+      const userResponse = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send(userToChangePassDto)
+        .expect(201);
+      const userToChangePass = userResponse.body.user;
+
+      const loginResponse = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          email: userToChangePass.email,
+          password: userToChangePassDto.password,
+        })
+        .expect(200);
+
+      userData.userId = userToChangePass.id;
+      userData.token = loginResponse.body.access_token;
+
+      changePasswordDto.oldPassword = userToChangePassDto.password;
+    });
+
+    it('should return 200 OK and description: Password changed successfully', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .set('Authorization', `Bearer ${userData.token}`)
+        .send(changePasswordDto);
+
+      expect(response.body.status).toBe(200);
+      expect(response.body.description).toEqual(
+        'Password changed successfully',
+      );
+    });
+
+    it('should return 400 Bad Request and message "Incorrect old password"', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .set('Authorization', `Bearer ${userData.token}`)
+        .send(changePasswordDto);
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toEqual('Incorrect old password');
+    });
+
+    it('should return 400 Bad Request and class-validator errors', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .set('Authorization', `Bearer ${userData.token}`)
+        .send({ oldPassword: '', newPassword: '' });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toEqual([
+        'oldPassword is not strong enough',
+        'oldPassword should not be empty',
+        'newPassword is not strong enough',
+        'newPassword should not be empty',
+      ]);
+    });
+
+    it('should return 401 Unauthorized and message "Unauthorized"', async () => {
+      const response = await request(app.getHttpServer())
+        .post('/auth/change-password')
+        .send(changePasswordDto);
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toEqual('Unauthorized');
+    });
+
+    afterAll(async () => {
+      //remove user and user teams
+      const users = await userRepository.find({
+        where: { id: userData.userId },
+        relations: ['teams'],
+      });
+      await teamRepository.remove(users[0].teams);
+      await userRepository.remove(users);
     });
   });
 });
